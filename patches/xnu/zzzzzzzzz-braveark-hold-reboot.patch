@@ -1,0 +1,35 @@
+diff --git a/bsd/kern/kern_shutdown.c b/bsd/kern/kern_shutdown.c
+--- a/bsd/kern/kern_shutdown.c
++++ b/bsd/kern/kern_shutdown.c
+@@ -66,6 +66,7 @@
+ #include <sys/sysproto.h>               /* abused for sync() */
+ #include <kern/clock.h>                 /* for delay_for_interval() */
+ #include <libkern/OSAtomic.h>
++#include <pexpert/pexpert.h>                /* PE_parse_boot_argn, for braveark-hold-reboot */
+ #include <IOKit/IOPlatformExpert.h>
+ #include <IOKit/IOMessage.h>
+ 
+@@ -179,6 +180,23 @@
+ 	int hostboot_option = 0;
+ 	uint64_t startTime;
+ 
++	/*
++	 * braveark-hold-reboot=1: bring-up aid. A reboot request (launchd, a daemon,
++	 * or the kernel itself) would reset into the stock OS and lose the screen;
++	 * panic instead, naming the requester, so the log stays visible.
++	 */
++	{
++		unsigned int hold = 0;
++		if (!(howto & RB_PANIC) &&
++		    PE_parse_boot_argn("braveark-hold-reboot", &hold, sizeof(hold)) && hold == 1) {
++			proc_t requester = current_proc();
++			panic("BRAVEARK: reboot held: pid %d (%s) howto 0x%x message %s",
++			    requester ? proc_pid(requester) : -1,
++			    requester ? proc_best_name(requester) : "?", howto,
++			    message ? message : "(none)");
++		}
++	}
++
+ 	if ((howto & (RB_PANIC | RB_QUICK)) == (RB_PANIC | RB_QUICK)) {
+ 		panic_kernel(howto, message);
+ 	}
