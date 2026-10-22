@@ -111,7 +111,6 @@ patches = ["Resources/MuPatches/Gic-Spurious.patch"]
 packages = [
   "{uefi}",
   "{uefi}/Platforms/Brave",
-  "{uefi}/Platforms/Xiaomi",       # ukePkg/Drivers/UkeBootMemoryDxe
   "{tree}/package",
   "{tree}/drivers/DarwinBoot",
   "{edk2}",
