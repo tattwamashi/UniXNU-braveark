@@ -1,18 +1,18 @@
-name: build-uke-kernel
+name: build-braveark-kernel
 
-# Builds the XNU kernels for the Xiaomi Pad 7 / POCO Pad X1 (uke, SM7675) on a
+# Builds the XNU kernels for the Brave Ark (braveark, SM8635; derived from UniXNU-uke) on a
 # macOS runner. The kernel step needs macOS: xnu's own makefiles are driven with
 # xcodebuild and the iPhoneOS SDK, and MIG ships only inside Xcode. Linux stops
 # at the missing MIG (see the piano port's LINUX-BUILD.md).
 #
 #   kernel  first-console kernel: corecrypto, ArmDTPlatform, ArmCpu, timer,
 #           PAN, DT panic region and the GOP legacy display.
-#   full    stage-6 kernel from configs/uke-full_defconfig: everything the
+#   full    stage-6 kernel from configs/braveark-full_defconfig: everything the
 #           source-reproducible archive chain can supply, including NativeUfs
 #           and NativeAES, plus mockfs, pthread, PMGR and the legacy display.
 #           The hardware-qualification gates (storage ABI snapshots, verified
 #           root policy bundles, VirtIO/RamBlock, owner-root, boot progress)
-#           stay off; configs/uke-full-plus_defconfig lists them.
+#           stay off; configs/braveark-full-plus_defconfig lists them.
 #
 # Runner note: the piano port proved that macos-14 / Xcode 15.4 is too old
 # (`-mach_msg2` is unknown and MIG has no SubSystem declaration). Use the
@@ -34,10 +34,10 @@ on:
       defconfig:
         description: 'Device defconfig to build'
         required: false
-        default: 'uke-full_defconfig'
+        default: 'braveark-full_defconfig'
 
 concurrency:
-  group: build-uke-kernel-${{ github.ref }}
+  group: build-braveark-kernel-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -61,7 +61,7 @@ jobs:
       - name: Check out the device repository
         uses: actions/checkout@v4
         with:
-          path: UniXNU-uke
+          path: UniXNU-braveark
 
       - name: Check out UniXNU
         uses: actions/checkout@v4
@@ -79,7 +79,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/Library/Caches/Homebrew
-          key: brew-${{ runner.os }}-${{ hashFiles('UniXNU-uke/.github/workflows/build-kernel.yml') }}
+          key: brew-${{ runner.os }}-${{ hashFiles('UniXNU-braveark/.github/workflows/build-kernel.yml') }}
           restore-keys: brew-${{ runner.os }}-
 
       - name: Restore the build tree
@@ -87,8 +87,8 @@ jobs:
         with:
           path: |
             UniXNU/out
-            UniXNU-uke/.cache
-          key: unixnu-kernel-${{ env.CACHE_SCHEMA }}-${{ steps.base.outputs.sha }}-${{ hashFiles('UniXNU-uke/board.toml', 'UniXNU-uke/feeds.toml', 'UniXNU-uke/unixnu.lock', 'UniXNU-uke/configs/**', 'UniXNU-uke/scripts/**', 'UniXNU-uke/patches/**', 'UniXNU-uke/package/**', 'UniXNU-uke/drivers/**', 'UniXNU-uke/kits/**', 'UniXNU/patches/**', 'UniXNU-uke/.github/workflows/build-kernel.yml') }}
+            UniXNU-braveark/.cache
+          key: unixnu-kernel-${{ env.CACHE_SCHEMA }}-${{ steps.base.outputs.sha }}-${{ hashFiles('UniXNU-braveark/board.toml', 'UniXNU-braveark/feeds.toml', 'UniXNU-braveark/unixnu.lock', 'UniXNU-braveark/configs/**', 'UniXNU-braveark/scripts/**', 'UniXNU-braveark/patches/**', 'UniXNU-braveark/package/**', 'UniXNU-braveark/drivers/**', 'UniXNU-braveark/kits/**', 'UniXNU/patches/**', 'UniXNU-braveark/.github/workflows/build-kernel.yml') }}
 
       - name: Report the runner toolchain
         run: |
@@ -114,11 +114,11 @@ jobs:
         working-directory: UniXNU
         run: |
           ./unixnu fetch xnu libplatform libdispatch AvailabilityVersions libpthread \
-                          corecrypto-2023 IOStorageFamily -D ../UniXNU-uke
+                          corecrypto-2023 IOStorageFamily -D ../UniXNU-braveark
 
       - name: Fetch the target IPSW members
         working-directory: UniXNU
-        run: ./unixnu ipsw fetch -D ../UniXNU-uke
+        run: ./unixnu ipsw fetch -D ../UniXNU-braveark
 
       - name: Bootstrap kernel and prelinked candidate
         working-directory: UniXNU
@@ -128,30 +128,30 @@ jobs:
         # CONFIG_XNU_BUILD_ARCHIVES is not set, so the board's archive list is
         # not run during this pass.
         run: |
-          ./unixnu defconfig bootstrap_defconfig -D ../UniXNU-uke
-          ./unixnu build kernel -D ../UniXNU-uke
-          test -f out/uke/kernel/kernel.macho
-          test -f out/uke/kernel/kernel.json
-          mkdir -p out/uke/tree/build/native-prelink
-          cp out/uke/kernel/kernel.macho \
-             out/uke/tree/build/native-prelink/native-owner-mobile-graphics-candidate.macho
-          cp out/uke/kernel/kernel.json \
-             out/uke/tree/build/native-prelink/native-owner-mobile-graphics-candidate.json
-          cp out/uke/kernel/kernel.macho \
-             out/uke/tree/build/native-prelink/native-owner-ufs-cpu-desktop-v9-hid-init-candidate.macho
-          cp out/uke/kernel/kernel.json \
-             out/uke/tree/build/native-prelink/native-owner-ufs-cpu-desktop-v9-hid-init-candidate.json
+          ./unixnu defconfig bootstrap_defconfig -D ../UniXNU-braveark
+          ./unixnu build kernel -D ../UniXNU-braveark
+          test -f out/braveark/kernel/kernel.macho
+          test -f out/braveark/kernel/kernel.json
+          mkdir -p out/braveark/tree/build/native-prelink
+          cp out/braveark/kernel/kernel.macho \
+             out/braveark/tree/build/native-prelink/native-owner-mobile-graphics-candidate.macho
+          cp out/braveark/kernel/kernel.json \
+             out/braveark/tree/build/native-prelink/native-owner-mobile-graphics-candidate.json
+          cp out/braveark/kernel/kernel.macho \
+             out/braveark/tree/build/native-prelink/native-owner-ufs-cpu-desktop-v9-hid-init-candidate.macho
+          cp out/braveark/kernel/kernel.json \
+             out/braveark/tree/build/native-prelink/native-owner-ufs-cpu-desktop-v9-hid-init-candidate.json
           # Do not leave the bootstrap kernel where the result step would
           # upload it as the shipping kernel.
-          rm -f out/uke/kernel/kernel.macho out/uke/kernel/kernel.json
-          ls -l out/uke/tree/build/native-prelink/
+          rm -f out/braveark/kernel/kernel.macho out/braveark/kernel/kernel.json
+          ls -l out/braveark/tree/build/native-prelink/
 
       - name: Build the first-console archives
         working-directory: UniXNU
         # The first-console configuration does not opt in to the board archive
         # list, so its archives are built here explicitly.
         run: |
-          workspace=out/uke/tree
+          workspace=out/braveark/tree
           ( cd "$workspace" && python3 scripts/gen-touch-firmware.py )
           ( cd "$workspace" && python3 scripts/build-corecrypto-14.py )
           ( cd "$workspace" && python3 scripts/build-corecrypto-14.py --namespace )
@@ -161,7 +161,7 @@ jobs:
           python3 - <<'PY'
           import json
           from pathlib import Path
-          p = Path('out/uke/tree/build/display-analysis/mobile-graphics-legacy-abi.json')
+          p = Path('out/braveark/tree/build/display-analysis/mobile-graphics-legacy-abi.json')
           if not p.exists():
               p.write_text(json.dumps({'runtime_metadata_checkpoint_sha256': '3044c2beff552911605994c0dc7aa73182066cbb5aed0b396999ceeb5a96da2b'}) + '\n')
           PY
@@ -173,29 +173,29 @@ jobs:
       - name: Build and prelink the first-console kernel
         working-directory: UniXNU
         run: |
-          ./unixnu defconfig uke_defconfig -D ../UniXNU-uke
-          ./unixnu build kernel -D ../UniXNU-uke
+          ./unixnu defconfig braveark_defconfig -D ../UniXNU-braveark
+          ./unixnu build kernel -D ../UniXNU-braveark
 
       - name: Record the result
         working-directory: UniXNU
         if: always()
         run: |
           mkdir -p ../artifacts
-          if [ -f out/uke/kernel/kernel.macho ]; then
-            cp out/uke/kernel/kernel.macho ../artifacts/
-            cp out/uke/kernel/kernel.json ../artifacts/ 2>/dev/null || true
-            shasum -a 256 out/uke/kernel/kernel.macho | tee ../artifacts/kernel.macho.sha256
+          if [ -f out/braveark/kernel/kernel.macho ]; then
+            cp out/braveark/kernel/kernel.macho ../artifacts/
+            cp out/braveark/kernel/kernel.json ../artifacts/ 2>/dev/null || true
+            shasum -a 256 out/braveark/kernel/kernel.macho | tee ../artifacts/kernel.macho.sha256
           else
             echo "kernel.macho was not produced" | tee ../artifacts/MISSING.txt
           fi
-          cp -r out/uke/logs ../artifacts/logs 2>/dev/null || true
+          cp -r out/braveark/logs ../artifacts/logs 2>/dev/null || true
           ls -l ../artifacts
 
       - name: Upload the kernel
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: uke-kernel
+          name: braveark-kernel
           path: artifacts/
           if-no-files-found: warn
           retention-days: 14
@@ -208,7 +208,7 @@ jobs:
       - name: Check out the device repository
         uses: actions/checkout@v4
         with:
-          path: UniXNU-uke
+          path: UniXNU-braveark
 
       - name: Check out UniXNU
         uses: actions/checkout@v4
@@ -226,7 +226,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/Library/Caches/Homebrew
-          key: brew-${{ runner.os }}-${{ hashFiles('UniXNU-uke/.github/workflows/build-kernel.yml') }}
+          key: brew-${{ runner.os }}-${{ hashFiles('UniXNU-braveark/.github/workflows/build-kernel.yml') }}
           restore-keys: brew-${{ runner.os }}-
 
       - name: Restore the build tree
@@ -234,8 +234,8 @@ jobs:
         with:
           path: |
             UniXNU/out
-            UniXNU-uke/.cache
-          key: unixnu-full-${{ env.CACHE_SCHEMA }}-${{ steps.base.outputs.sha }}-${{ inputs.defconfig || 'uke-full_defconfig' }}-${{ hashFiles('UniXNU-uke/board.toml', 'UniXNU-uke/feeds.toml', 'UniXNU-uke/unixnu.lock', 'UniXNU-uke/configs/**', 'UniXNU-uke/scripts/**', 'UniXNU-uke/patches/**', 'UniXNU-uke/package/**', 'UniXNU-uke/drivers/**', 'UniXNU-uke/kits/**', 'UniXNU/patches/**', 'UniXNU-uke/.github/workflows/build-kernel.yml') }}
+            UniXNU-braveark/.cache
+          key: unixnu-full-${{ env.CACHE_SCHEMA }}-${{ steps.base.outputs.sha }}-${{ inputs.defconfig || 'braveark-full_defconfig' }}-${{ hashFiles('UniXNU-braveark/board.toml', 'UniXNU-braveark/feeds.toml', 'UniXNU-braveark/unixnu.lock', 'UniXNU-braveark/configs/**', 'UniXNU-braveark/scripts/**', 'UniXNU-braveark/patches/**', 'UniXNU-braveark/package/**', 'UniXNU-braveark/drivers/**', 'UniXNU-braveark/kits/**', 'UniXNU/patches/**', 'UniXNU-braveark/.github/workflows/build-kernel.yml') }}
 
       - name: Report the runner toolchain
         run: |
@@ -257,32 +257,32 @@ jobs:
         # other references feed the kernel scripts and the archive builders.
         run: |
           ./unixnu fetch xnu libplatform libdispatch AvailabilityVersions libpthread \
-                          corecrypto-2023 IOStorageFamily -D ../UniXNU-uke
+                          corecrypto-2023 IOStorageFamily -D ../UniXNU-braveark
 
       - name: Fetch the target IPSW members
         working-directory: UniXNU
-        run: ./unixnu ipsw fetch -D ../UniXNU-uke
+        run: ./unixnu ipsw fetch -D ../UniXNU-braveark
 
       - name: Bootstrap kernel and prelinked candidate
         working-directory: UniXNU
         # CONFIG_XNU_BUILD_ARCHIVES is unset in bootstrap_defconfig, so this
         # pass only produces the compile records and the prelinked candidate.
         run: |
-          ./unixnu defconfig bootstrap_defconfig -D ../UniXNU-uke
-          ./unixnu build kernel -D ../UniXNU-uke
-          test -f out/uke/kernel/kernel.macho
-          test -f out/uke/kernel/kernel.json
-          mkdir -p out/uke/tree/build/native-prelink
-          cp out/uke/kernel/kernel.macho \
-             out/uke/tree/build/native-prelink/native-owner-mobile-graphics-candidate.macho
-          cp out/uke/kernel/kernel.json \
-             out/uke/tree/build/native-prelink/native-owner-mobile-graphics-candidate.json
-          cp out/uke/kernel/kernel.macho \
-             out/uke/tree/build/native-prelink/native-owner-ufs-cpu-desktop-v9-hid-init-candidate.macho
-          cp out/uke/kernel/kernel.json \
-             out/uke/tree/build/native-prelink/native-owner-ufs-cpu-desktop-v9-hid-init-candidate.json
-          rm -f out/uke/kernel/kernel.macho out/uke/kernel/kernel.json
-          ls -l out/uke/tree/build/native-prelink/
+          ./unixnu defconfig bootstrap_defconfig -D ../UniXNU-braveark
+          ./unixnu build kernel -D ../UniXNU-braveark
+          test -f out/braveark/kernel/kernel.macho
+          test -f out/braveark/kernel/kernel.json
+          mkdir -p out/braveark/tree/build/native-prelink
+          cp out/braveark/kernel/kernel.macho \
+             out/braveark/tree/build/native-prelink/native-owner-mobile-graphics-candidate.macho
+          cp out/braveark/kernel/kernel.json \
+             out/braveark/tree/build/native-prelink/native-owner-mobile-graphics-candidate.json
+          cp out/braveark/kernel/kernel.macho \
+             out/braveark/tree/build/native-prelink/native-owner-ufs-cpu-desktop-v9-hid-init-candidate.macho
+          cp out/braveark/kernel/kernel.json \
+             out/braveark/tree/build/native-prelink/native-owner-ufs-cpu-desktop-v9-hid-init-candidate.json
+          rm -f out/braveark/kernel/kernel.macho out/braveark/kernel/kernel.json
+          ls -l out/braveark/tree/build/native-prelink/
 
       - name: Seed the display ABI observation cache
         working-directory: UniXNU
@@ -291,11 +291,11 @@ jobs:
         # pruned. The observation is of the unchanged iPad7,1 original class,
         # not of the native uke kernel; uke pins the same kernelcache as sheng.
         run: |
-          mkdir -p out/uke/tree/build/display-analysis
+          mkdir -p out/braveark/tree/build/display-analysis
           python3 - <<'PY'
           import json
           from pathlib import Path
-          p = Path('out/uke/tree/build/display-analysis/mobile-graphics-legacy-abi.json')
+          p = Path('out/braveark/tree/build/display-analysis/mobile-graphics-legacy-abi.json')
           if not p.exists():
               p.write_text(json.dumps({'runtime_metadata_checkpoint_sha256': '3044c2beff552911605994c0dc7aa73182066cbb5aed0b396999ceeb5a96da2b'}) + '\n')
           PY
@@ -303,7 +303,7 @@ jobs:
       - name: Stage the inputs the board archive list reads
         working-directory: UniXNU
         run: |
-          workspace=out/uke/tree
+          workspace=out/braveark/tree
           ( cd "$workspace" && python3 scripts/gen-touch-firmware.py )
           mkdir -p "$workspace/.cache/firmware/kernelcache.macho"
           source=$(find out -name 'kernelcache.decompressed' -print -quit)
@@ -318,29 +318,29 @@ jobs:
         # recorded original bindings, the public storage headers, the NativeUfs
         # bring-up transport, mockfs, PMGR, pthread and the legacy display.
         run: |
-          ./unixnu defconfig "${{ github.event.inputs.defconfig || 'uke-full_defconfig' }}" -D ../UniXNU-uke
+          ./unixnu defconfig "${{ github.event.inputs.defconfig || 'braveark-full_defconfig' }}" -D ../UniXNU-braveark
           ./unixnu status
-          ./unixnu build kernel -D ../UniXNU-uke
+          ./unixnu build kernel -D ../UniXNU-braveark
 
       - name: Record the result
         working-directory: UniXNU
         if: always()
         run: |
           mkdir -p ../artifacts-full
-          if [ -f out/uke/kernel/kernel.macho ]; then
-            cp out/uke/kernel/kernel.macho ../artifacts-full/
-            cp out/uke/kernel/kernel.json ../artifacts-full/ 2>/dev/null || true
-            shasum -a 256 out/uke/kernel/kernel.macho | tee ../artifacts-full/kernel.macho.sha256
+          if [ -f out/braveark/kernel/kernel.macho ]; then
+            cp out/braveark/kernel/kernel.macho ../artifacts-full/
+            cp out/braveark/kernel/kernel.json ../artifacts-full/ 2>/dev/null || true
+            shasum -a 256 out/braveark/kernel/kernel.macho | tee ../artifacts-full/kernel.macho.sha256
           else
             echo "kernel.macho was not produced" | tee ../artifacts-full/MISSING.txt
           fi
-          cp -r out/uke/logs ../artifacts-full/logs 2>/dev/null || true
+          cp -r out/braveark/logs ../artifacts-full/logs 2>/dev/null || true
           for report in build/native-aes/bindings.json build/storage-abi/headers.json \
                         build/native-ufs/bindings.json build/native-ufs/compile.log \
                         build/native-legacy-display/build-report.json; do
-            if [ -f "out/uke/tree/$report" ]; then
+            if [ -f "out/braveark/tree/$report" ]; then
               mkdir -p "../artifacts-full/$(dirname "$report")"
-              cp "out/uke/tree/$report" "../artifacts-full/$report"
+              cp "out/braveark/tree/$report" "../artifacts-full/$report"
             fi
           done
           ls -l ../artifacts-full
@@ -349,7 +349,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: uke-kernel-full
+          name: braveark-kernel-full
           path: artifacts-full/
           if-no-files-found: warn
           retention-days: 14

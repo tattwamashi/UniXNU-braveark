@@ -1,4 +1,4 @@
-name: build-uke-data-seed
+name: build-braveark-data-seed
 
 # Build the APFS Data seed from the original iPad7,1 OS volume and grow its
 # container to the end of the uke userdata partition. The owner Data mount uses
@@ -21,7 +21,7 @@ jobs:
       - name: Check out the device repository
         uses: actions/checkout@v4
         with:
-          path: UniXNU-uke
+          path: UniXNU-braveark
 
       - name: Check out UniXNU
         uses: actions/checkout@v4
@@ -33,7 +33,7 @@ jobs:
 
       - name: Fetch the OS member
         working-directory: UniXNU
-        run: ./unixnu ipsw fetch OS -D ../UniXNU-uke
+        run: ./unixnu ipsw fetch OS -D ../UniXNU-braveark
 
       - name: Build the Data seed
         working-directory: UniXNU
@@ -65,7 +65,7 @@ jobs:
       - name: Upload the Data seed
         uses: actions/upload-artifact@v4
         with:
-          name: uke-data-seed
+          name: braveark-data-seed
           path: |
             UniXNU/build/owner-data-fixture/owner-data-32.cdr
             UniXNU/build/owner-data-fixture/owner-data-32.dbr

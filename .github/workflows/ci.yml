@@ -39,7 +39,7 @@ jobs:
       - name: Check out the device repository
         uses: actions/checkout@v4
         with:
-          path: UniXNU-uke
+          path: UniXNU-braveark
 
       - name: Check out UniXNU
         uses: actions/checkout@v4
@@ -58,7 +58,7 @@ jobs:
         run: python3 -m pip install --quiet pyyaml
 
       - name: Check the workflow, board and source syntax
-        working-directory: UniXNU-uke
+        working-directory: UniXNU-braveark
         run: |
           python3 -c "import pathlib,tomllib,yaml; [yaml.safe_load(p.read_text()) for p in pathlib.Path('.github/workflows').glob('*.yml')]; tomllib.loads(pathlib.Path('board.toml').read_text()); tomllib.loads(pathlib.Path('feeds.toml').read_text()); tomllib.loads(pathlib.Path('unixnu.lock').read_text()); print('ok workflow/board/feeds/lock')"
           for script in scripts/*.sh; do bash -n "$script"; done
@@ -66,5 +66,5 @@ jobs:
           echo 'ok shell and python syntax'
 
       - name: Apply the XNU patch set to a clean tree
-        working-directory: UniXNU-uke
+        working-directory: UniXNU-braveark
         run: bash scripts/check-xnu-patch-set.sh
