@@ -779,7 +779,7 @@ PY_BINDINGS
   # absent while the bootstrap links and present for the real kernel link. The
   # archive carries both the pram writer and the launchd watchdog policy.
   if [ "$BOOT_LOG" = 1 ] || [ "$WATCHDOG_POLICY" = 1 ]; then
-    LAST_LOG_ARCHIVE=$ROOT/build/uke-last-log/libUkeLastLog.a
+    LAST_LOG_ARCHIVE=$ROOT/build/braveark-last-log/libBravearkLastLog.a
     if [ -f "$LAST_LOG_ARCHIVE" ]; then
       KERNEL_EXTRA_ARCHIVES="$KERNEL_EXTRA_ARCHIVES -Wl,-force_load,$LAST_LOG_ARCHIVE"
       KERNEL_ARCHIVE_DEPENDENCIES="$KERNEL_ARCHIVE_DEPENDENCIES $LAST_LOG_ARCHIVE"

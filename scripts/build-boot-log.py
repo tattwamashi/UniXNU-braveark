@@ -6,11 +6,11 @@ from pathlib import Path
 import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / 'build/uke-last-log'
+OUT = ROOT / 'build/braveark-last-log'
 OUT.mkdir(parents=True, exist_ok=True)
 record = json.loads((ROOT / 'build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/osfmk/DEVELOPMENT/startup.o.json').read_text().strip().rstrip(','))
-source = ROOT / 'kits/braveark/UkeLastLog.c'
-obj = OUT / 'UkeLastLog.o'
+source = ROOT / 'kits/braveark/BravearkLastLog.c'
+obj = OUT / 'BravearkLastLog.o'
 command = []
 args = record['arguments']
 i = 0
@@ -54,7 +54,7 @@ policy_command += ['-mgeneral-regs-only', '-Wall', '-Wextra', '-Werror']
 subprocess.run(policy_command, cwd=policy_record['directory'], check=True, timeout=120)
 (OUT / 'policy-compile-command.json').write_text(json.dumps(policy_command, indent=2) + '\n')
 
-archive = OUT / 'libUkeLastLog.a'
+archive = OUT / 'libBravearkLastLog.a'
 archive.unlink(missing_ok=True)
 subprocess.run(['xcrun', 'ar', 'rcs', str(archive), str(obj), str(policy_obj)], check=True, timeout=30)
 (OUT / 'build-report.json').write_text(json.dumps({

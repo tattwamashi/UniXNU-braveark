@@ -23,29 +23,29 @@
 extern vm_offset_t gPanicBase;
 extern unsigned int gPanicSize;
 
-#define UKE_LAST_LOG_INTERVAL_MS 500
+#define BRAVEARK_LAST_LOG_INTERVAL_MS 500
 
 // The 4 MiB pram region is split in two halves. The low half keeps the
 // embedded-panic FUNK record for the XNU console; the high half is a Linux
 // ramoops console zone (persistent_ram_buffer, no ECC), which the uke Linux
 // ramoops backend exposes at /sys/fs/pstore/console-ramoops-0.
-#define UKE_FUNK_LOG_SIZE   0x200000u
-#define UKE_RAMOOPS_OFFSET  0x200000u
-#define UKE_RAMOOPS_SIZE    0x200000u
-#define UKE_RAMOOPS_MAGIC   0x43474244u /* "DBGC", see Linux pstore_ram.h */
+#define BRAVEARK_FUNK_LOG_SIZE   0x200000u
+#define BRAVEARK_RAMOOPS_OFFSET  0x200000u
+#define BRAVEARK_RAMOOPS_SIZE    0x200000u
+#define BRAVEARK_RAMOOPS_MAGIC   0x43474244u /* "DBGC", see Linux pstore_ram.h */
 
-struct uke_ramoops_buffer {
+struct braveark_ramoops_buffer {
 	uint32_t sig;
 	uint32_t start;
 	uint32_t size;
 	uint8_t data[];
 };
 
-static uint32_t uke_ramoops_last_write;
-static int uke_ramoops_initialized;
+static uint32_t braveark_ramoops_last_write;
+static int braveark_ramoops_initialized;
 
 static void
-uke_ramoops_append(struct uke_ramoops_buffer *buffer, size_t capacity,
+braveark_ramoops_append(struct braveark_ramoops_buffer *buffer, size_t capacity,
     const uint8_t *src, size_t count)
 {
 	size_t start, size, first;
@@ -87,28 +87,28 @@ uke_ramoops_append(struct uke_ramoops_buffer *buffer, size_t capacity,
 }
 
 static void
-uke_ramoops_write(struct msgbuf *m)
+braveark_ramoops_write(struct msgbuf *m)
 {
-	struct uke_ramoops_buffer *buffer;
+	struct braveark_ramoops_buffer *buffer;
 	size_t capacity, size, start, first, tail;
 	int write;
 
-	if (gPanicBase == 0 || gPanicSize < UKE_RAMOOPS_OFFSET + UKE_RAMOOPS_SIZE) {
+	if (gPanicBase == 0 || gPanicSize < BRAVEARK_RAMOOPS_OFFSET + BRAVEARK_RAMOOPS_SIZE) {
 		return;
 	}
-	buffer = (struct uke_ramoops_buffer *)(uintptr_t)(gPanicBase + UKE_RAMOOPS_OFFSET);
-	capacity = UKE_RAMOOPS_SIZE - sizeof(*buffer);
+	buffer = (struct braveark_ramoops_buffer *)(uintptr_t)(gPanicBase + BRAVEARK_RAMOOPS_OFFSET);
+	capacity = BRAVEARK_RAMOOPS_SIZE - sizeof(*buffer);
 	write = m->msg_bufx;
 	if (write <= 0) {
 		return;
 	}
 	size = (size_t)m->msg_size;
-	if (!uke_ramoops_initialized) {
-		buffer->sig = UKE_RAMOOPS_MAGIC;
+	if (!braveark_ramoops_initialized) {
+		buffer->sig = BRAVEARK_RAMOOPS_MAGIC;
 		buffer->start = 0;
 		buffer->size = 0;
 		__asm__ volatile("dsb sy" ::: "memory");
-		uke_ramoops_initialized = 1;
+		braveark_ramoops_initialized = 1;
 		// Seed the ring with the current msgbuf tail: the display/root work
 		// runs before the first 500 ms tick, so a delta-only start would lose
 		// the interesting beginning of the boot.
@@ -124,34 +124,34 @@ uke_ramoops_write(struct msgbuf *m)
 		if (first > tail) {
 			first = tail;
 		}
-		uke_ramoops_append(buffer, capacity,
+		braveark_ramoops_append(buffer, capacity,
 		    (const uint8_t *)m->msg_bufc + start, first);
 		if (tail > first) {
-			uke_ramoops_append(buffer, capacity, (const uint8_t *)m->msg_bufc,
+			braveark_ramoops_append(buffer, capacity, (const uint8_t *)m->msg_bufc,
 			    tail - first);
 		}
-		uke_ramoops_last_write = (uint32_t)write;
+		braveark_ramoops_last_write = (uint32_t)write;
 		return;
 	}
-	if ((uint32_t)write == uke_ramoops_last_write) {
+	if ((uint32_t)write == braveark_ramoops_last_write) {
 		return;
 	}
-	if ((uint32_t)write > uke_ramoops_last_write) {
-		uke_ramoops_append(buffer, capacity,
-		    (const uint8_t *)m->msg_bufc + uke_ramoops_last_write,
-		    (size_t)write - uke_ramoops_last_write);
+	if ((uint32_t)write > braveark_ramoops_last_write) {
+		braveark_ramoops_append(buffer, capacity,
+		    (const uint8_t *)m->msg_bufc + braveark_ramoops_last_write,
+		    (size_t)write - braveark_ramoops_last_write);
 	} else {
-		uke_ramoops_append(buffer, capacity,
-		    (const uint8_t *)m->msg_bufc + uke_ramoops_last_write,
-		    size - uke_ramoops_last_write);
-		uke_ramoops_append(buffer, capacity, (const uint8_t *)m->msg_bufc,
+		braveark_ramoops_append(buffer, capacity,
+		    (const uint8_t *)m->msg_bufc + braveark_ramoops_last_write,
+		    size - braveark_ramoops_last_write);
+		braveark_ramoops_append(buffer, capacity, (const uint8_t *)m->msg_bufc,
 		    (size_t)write);
 	}
-	uke_ramoops_last_write = (uint32_t)write;
+	braveark_ramoops_last_write = (uint32_t)write;
 }
 
 static void
-uke_last_log_write(void)
+braveark_last_log_write(void)
 {
 	struct embedded_panic_header *hdr;
 	struct msgbuf *m = msgbufp;
@@ -171,7 +171,7 @@ uke_last_log_write(void)
 
 	hdr = (struct embedded_panic_header *)(uintptr_t)gPanicBase;
 	size = (size_t)m->msg_size;
-	cap = UKE_FUNK_LOG_SIZE - sizeof(*hdr) - 1;
+	cap = BRAVEARK_FUNK_LOG_SIZE - sizeof(*hdr) - 1;
 	if (cap > size) {
 		cap = size;
 	}
@@ -202,23 +202,23 @@ uke_last_log_write(void)
 	hdr->eph_other_log_len = 0;
 	__asm__ volatile("dsb sy" ::: "memory");
 
-	uke_ramoops_write(m);
+	braveark_ramoops_write(m);
 }
 
 static void
-uke_last_log_writer(void *arg, wait_result_t result)
+braveark_last_log_writer(void *arg, wait_result_t result)
 {
 	(void)arg;
 	(void)result;
 
 	for (;;) {
-		uke_last_log_write();
-		IOSleep(UKE_LAST_LOG_INTERVAL_MS);
+		braveark_last_log_write();
+		IOSleep(BRAVEARK_LAST_LOG_INTERVAL_MS);
 	}
 }
 
 static void
-uke_last_log_start(void)
+braveark_last_log_start(void)
 {
 	uint32_t enabled = 0;
 	thread_t thread;
@@ -229,9 +229,9 @@ uke_last_log_start(void)
 	if (gPanicBase == 0 || gPanicSize <= sizeof(struct embedded_panic_header) + 1) {
 		return;
 	}
-	if (kernel_thread_start_priority(uke_last_log_writer, NULL, BASEPRI_KERNEL, &thread) == KERN_SUCCESS) {
+	if (kernel_thread_start_priority(braveark_last_log_writer, NULL, BASEPRI_KERNEL, &thread) == KERN_SUCCESS) {
 		thread_deallocate(thread);
 	}
 }
 
-STARTUP(EARLY_BOOT, STARTUP_RANK_LAST, uke_last_log_start);
+STARTUP(EARLY_BOOT, STARTUP_RANK_LAST, braveark_last_log_start);
