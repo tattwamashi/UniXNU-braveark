@@ -12,9 +12,12 @@ GICv3 `0x17100000`/`0x17180000`, UFS `0x1d84000` (PHY `0x1d80000`, SMMU stream
 `llcc_lpi` panic-log region at `0xff800000` and the vendor ramdisk at
 `0x1000000`. The device identity is `brave,braveark` / `qcom,cliffsp`.
 
-Internal names from the uke and sheng ports (`-uketextconsole`, `sheng-*`
-boot arguments, `UKE:` log prefixes, `UkeBootMemoryDxe`) are kept on purpose:
-the kernel patches and kits refer to them.
+Names that belong to this device use `braveark`: the kit (`kits/braveark`),
+`BravearkLastLog`, `BravearkPreflight`, the `-bravearktextconsole` boot argument
+and the `BRAVEARK:` log prefix. Names defined in UniXNU itself stay as they are
+there: the `sheng-*` and `offline-*` boot arguments, the `uke` branch of
+`Allenwdk/UniXNU`, the `_uke_*` symbols of `NativeLegacyDisplay` and the
+`gUkeMemStatusGuid` status table the UniXNU menu reads.
 
 ## Status
 
@@ -23,7 +26,8 @@ the kernel patches and kits refer to them.
 | 1. UEFI firmware (Mu-Silicium `bravearkPkg`) | works via `fastboot boot` |
 | 2. UniXNU menu | works |
 | 3. Payload | works from `vendor_boot` (see below) |
-| 4. DarwinBoot / 5. XNU entry | next: first kernel from the macOS workflow |
+| 4. DarwinBoot / 5. XNU entry | works: XNU reaches BSD init on all 8 CPUs |
+| 6. Root | in progress: iPadOS 17.7.11 root image on userdata |
 
 ## Hardware data
 
