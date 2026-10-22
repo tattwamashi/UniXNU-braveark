@@ -4,6 +4,7 @@ struct UfsSmmuPlan {
   unsigned slot = 0xffffffffU, bank = 0, pages = 0;
   uint32_t smr = 0, s2cr = 0;
   bool reuse = false;
+  bool takeover = false;   // the slot held our exact stream on another bank; it is repointed
   const char *error = nullptr;
 };
 // ARM IHI 0062D.c sections 1.6 and 3.7: VA64=0 still rejects inputs above
@@ -19,7 +20,8 @@ static unsigned ufsSmmuAddressBits(unsigned code)
 }
 // One attempt with a given context bank (counted from the top). The caller falls back to lower banks when this one is held by another stream.
 template <class Read>
-static UfsSmmuPlan planUfsSmmuBank(uint16_t stream, uint64_t dma, uint64_t bytes, Read read, unsigned bankFromTop)
+static UfsSmmuPlan planUfsSmmuBank(uint16_t stream, uint64_t dma, uint64_t bytes, Read read, unsigned bankFromTop,
+                                   bool allowTakeover = false)
 {
   UfsSmmuPlan p;
   uint32_t idr0 = read(0x20), idr2 = read(0x28);
@@ -47,7 +49,7 @@ static UfsSmmuPlan planUfsSmmuBank(uint16_t stream, uint64_t dma, uint64_t bytes
   for (unsigned i = 0; i < count; ++i) {
     uint32_t smr = read(0x800 + 4 * i);
     if (!(smr & 0x80000000U)) {
-      if (!p.reuse) p.slot = i;
+      if (!p.reuse && !p.takeover) p.slot = i;
       continue;
     }
     uint32_t s2cr = read(0xc00 + 4 * i);
@@ -56,10 +58,13 @@ static UfsSmmuPlan planUfsSmmuBank(uint16_t stream, uint64_t dma, uint64_t bytes
     bool ourBank = ((s2cr >> 16) & 3) == 0 && (s2cr & 255) == p.bank;
     if (match) {
       ++matches;
-      if (matches > 1 || mask || !ourBank) {
+      if (matches > 1 || mask || (!ourBank && !allowTakeover)) {
         p.slot = i; p.smr = smr; p.s2cr = s2cr;
         p.error = "conflicting UFS stream mapping"; return p;
       }
+      // Opt-in (native-ufs-smmu-takeover=1): the firmware's UFS driver left exactly our stream, unmasked,
+      // on its own context bank. Repoint that one slot to our bypass bank instead of refusing.
+      if (!ourBank) {p.takeover = true; p.slot = i; p.smr = smr; p.s2cr = s2cr; continue;}
       p.reuse = true; p.slot = i;
     } else if (ourBank) {
       p.slot = i; p.smr = smr; p.s2cr = s2cr;
@@ -80,10 +85,10 @@ static UfsSmmuPlan planUfsSmmuBank(uint16_t stream, uint64_t dma, uint64_t bytes
 // (no other valid stream maps it, translation off). Any other refusal (a conflicting mapping of our own stream, no free group, unsupported geometry)
 // is final and is reported as the first attempt saw it.
 template <class Read>
-static UfsSmmuPlan planUfsSmmu(uint16_t stream, uint64_t dma, uint64_t bytes, Read read)
+static UfsSmmuPlan planUfsSmmu(uint16_t stream, uint64_t dma, uint64_t bytes, Read read, bool allowTakeover = false)
 {
   enum {kBankAttempts = 8};
-  UfsSmmuPlan first = planUfsSmmuBank(stream, dma, bytes, read, 0);
+  UfsSmmuPlan first = planUfsSmmuBank(stream, dma, bytes, read, 0, allowTakeover);
   if (!first.error) return first;
   // "conflicting" is retried too: our own stream may already sit on a lower bank from an earlier run that had to fall back.
   auto retryable = [](const char *e) {
@@ -92,7 +97,7 @@ static UfsSmmuPlan planUfsSmmu(uint16_t stream, uint64_t dma, uint64_t bytes, Re
   };
   if (!retryable(first.error)) return first;
   for (unsigned attempt = 1; attempt < kBankAttempts; ++attempt) {
-    UfsSmmuPlan next = planUfsSmmuBank(stream, dma, bytes, read, attempt);
+    UfsSmmuPlan next = planUfsSmmuBank(stream, dma, bytes, read, attempt, allowTakeover);
     if (!next.error) return next;
     if (!retryable(next.error)) break;
   }

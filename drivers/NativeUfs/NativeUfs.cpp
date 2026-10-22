@@ -268,6 +268,9 @@ static void zero32 (void *start, size_t length)
 }
 
 
+// native-ufs-smmu-takeover=1: repoint a firmware stream mapping of the UFS stream (see planUfsSmmu).
+static bool gSmmuTakeover;
+
 // Give the UFS stream a pass-through mapping the way Linux does on this firmware.
 // Hardware 2026-10-17: after hand-off apps_smmu has sCR0 = 0x002f0406 (USFCFG=1, unmatched
 // streams fault), no stream-match entry for the UFS host (ID 0x60, `iommus = <&apps_smmu 0x60
@@ -286,7 +289,8 @@ static void smmuBypassStream (uint16_t stream, OSSharedPtr<IOMemoryMap> &keep, u
   if (!smmu) {
     panic ("NATIVE_UFS smmu: map failed");
   }
-  UfsSmmuPlan plan = planUfsSmmu (stream, dma, bytes, [smmu](unsigned offset) { return read32 (smmu, offset); });
+  UfsSmmuPlan plan = planUfsSmmu (stream, dma, bytes, [smmu](unsigned offset) { return read32 (smmu, offset); },
+                                  gSmmuTakeover);
   gRootDiagnostic.smmuId1 = read32 (smmu, 0x24);
   gRootDiagnostic.smmuId2 = read32 (smmu, 0x28);
   gRootDiagnostic.smmuSlot = plan.slot;
@@ -296,6 +300,9 @@ static void smmuBypassStream (uint16_t stream, OSSharedPtr<IOMemoryMap> &keep, u
     gRootDiagnostic.smr = plan.smr; gRootDiagnostic.s2cr = plan.s2cr;
     rootDiagnosticFailure (plan.error);
     panic ("NATIVE_UFS smmu: %s slot=%u smr=%x s2cr=%x", plan.error, plan.slot, plan.smr, plan.s2cr);
+  }
+  if (plan.takeover) {
+    IOLog ("NativeUfs: smmu takeover slot=%u smr=%x s2cr=%x -> bank %u\n", plan.slot, plan.smr, plan.s2cr, plan.bank);
   }
   unsigned bank = plan.bank, index = plan.slot;
   uintptr_t cb = smmu + (plan.pages + bank) * 4096;
@@ -1826,6 +1833,9 @@ bool NativeUfs::start (IOService *provider)
   PE_parse_boot_argn ("native-ufs-root", &rootMode, sizeof (rootMode));
   PE_parse_boot_argn ("native-ufs-allow-unverified", &allowUnverified, sizeof (allowUnverified));
   gAllowUnverifiedRoot = allowUnverified == 1;
+  unsigned smmuTakeover = 0;
+  PE_parse_boot_argn ("native-ufs-smmu-takeover", &smmuTakeover, sizeof (smmuTakeover));
+  gSmmuTakeover = smmuTakeover == 1;
   native_ufs_probe_requested = probe != 0;
   // Default: match for observability only, never touch the controller. Hardware work runs once,
   // from the root-device personality; the ufshc nub match stays observation-only.

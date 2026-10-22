@@ -23,6 +23,11 @@ int main()
   reset(); for(unsigned k=0;k<8;++k){r[(0x800+4*k)/4]=0x80000100+k;r[(0xc00+4*k)/4]=69-k;}
   p=plan(); assert(p.error && !__builtin_strcmp(p.error,"reserved context bank already used") && p.bank==69);
   reset(); r[0x800/4]=0x80000060; r[0xc00/4]=1; assert(plan().error);
+  // Opt-in takeover: the firmware UFS driver left exactly our stream on its own bank (Brave Ark UFSDxe).
+  auto takeover=[&] {return planUfsSmmu(0x60,0x8cb5e9000ULL,0x22000,[&](unsigned at){return r.at(at/4);},true);};
+  p=takeover(); assert(!p.error && p.takeover && !p.reuse && p.slot==0 && p.bank==69 && p.s2cr==1);
+  r[0x804/4]=0x80000060; r[0xc04/4]=2; assert(takeover().error); // two mappings of our stream: still refused
+  reset(); r[0x800/4]=0x80010060; r[0xc00/4]=1; assert(takeover().error); // masked: may cover other streams
   // Our stream already mapped to the fallback bank by an earlier run (the top bank held by another stream): reused, not refused.
   reset(); r[0x800/4]=0x80000061; r[0xc00/4]=69; r[0x804/4]=0x80000060; r[0xc04/4]=68; r[(0x1000+4*68)/4]=0x10000;
   p=plan(); assert(!p.error && p.reuse && p.bank==68 && p.slot==1);
