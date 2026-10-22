@@ -30,4 +30,4 @@
   gEfiMdePkgTokenSpaceGuid.PcdDebugPropertyMask|0x07
 
 [Components]
-  drivers/UkePreflight/UkePreflight.inf
+  drivers/BravearkPreflight/BravearkPreflight.inf
