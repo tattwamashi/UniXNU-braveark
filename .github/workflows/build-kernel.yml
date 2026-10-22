@@ -191,6 +191,19 @@ jobs:
           cp -r out/braveark/logs ../artifacts/logs 2>/dev/null || true
           ls -l ../artifacts
 
+      - name: Encrypt the braveark-kernel artifact
+        if: always()
+        env:
+          ARTIFACT_KEY: ${{ secrets.ARTIFACT_KEY }}
+        run: |
+          # The kernel is prelinked with Apple kexts: only an encrypted copy leaves the runner.
+          test -n "$ARTIFACT_KEY" || { echo 'ARTIFACT_KEY secret is not set' >&2; exit 1; }
+          test -d artifacts || exit 0
+          tar -C artifacts -cf braveark-kernel.tar .
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:ARTIFACT_KEY -in braveark-kernel.tar -out braveark-kernel.tar.enc
+          rm -rf artifacts braveark-kernel.tar && mkdir artifacts && mv braveark-kernel.tar.enc artifacts/
+          ls -l artifacts
+
       - name: Upload the kernel
         if: always()
         uses: actions/upload-artifact@v4
@@ -344,6 +357,19 @@ jobs:
             fi
           done
           ls -l ../artifacts-full
+
+      - name: Encrypt the braveark-kernel-full artifact
+        if: always()
+        env:
+          ARTIFACT_KEY: ${{ secrets.ARTIFACT_KEY }}
+        run: |
+          # The kernel is prelinked with Apple kexts: only an encrypted copy leaves the runner.
+          test -n "$ARTIFACT_KEY" || { echo 'ARTIFACT_KEY secret is not set' >&2; exit 1; }
+          test -d artifacts-full || exit 0
+          tar -C artifacts-full -cf braveark-kernel-full.tar .
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:ARTIFACT_KEY -in braveark-kernel-full.tar -out braveark-kernel-full.tar.enc
+          rm -rf artifacts-full braveark-kernel-full.tar && mkdir artifacts-full && mv braveark-kernel-full.tar.enc artifacts-full/
+          ls -l artifacts-full
 
       - name: Upload the full kernel
         if: always()
