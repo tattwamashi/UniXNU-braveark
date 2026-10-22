@@ -337,14 +337,14 @@ static void native_legacy_default_surface_state(IOService *display,bool adopt) {
         memcpy(&tempRegion,reinterpret_cast<unsigned char *>(temp)+0x28,sizeof(tempRegion));
         memcpy(&tempDescriptor,reinterpret_cast<unsigned char *>(temp)+0x30,sizeof(tempDescriptor));
     }
-    IOLog("UKE: display surface root=%p gate=%p wl=%p surface=%p temp=%p region=%p flag=%u dims=%ux%u mode=%08x/%u/%u sid=%u mem=%p desc=%p debugger=%u\n",
+    IOLog("BRAVEARK: display surface root=%p gate=%p wl=%p surface=%p temp=%p region=%p flag=%u dims=%ux%u mode=%08x/%u/%u sid=%u mem=%p desc=%p debugger=%u\n",
         root,gate,workloop,surface,temp,region,(unsigned)flag,(unsigned)width,(unsigned)height,
         (unsigned)format,(unsigned)planes,(unsigned)bpp,(unsigned)sid,tempRegion,tempDescriptor,
         (unsigned)PE_i_can_has_debugger(NULL));
     if(adopt && !surface && temp) {
         ((OSObject *)temp)->retain();
         memcpy(fb+0x1618,&temp,sizeof(temp));
-        IOLog("UKE: display surface adopted surface=%p sid=%u\n",temp,(unsigned)sid);
+        IOLog("BRAVEARK: display surface adopted surface=%p sid=%u\n",temp,(unsigned)sid);
     }
 }
 // Diagnostic parking point for the bring-up: print the original Legacy state
@@ -452,10 +452,10 @@ void native_legacy_display_late_probe(void) {
                             if(region) {
                                 memcpy(fb+0x17c0,&region,sizeof(region));
                                 fb[0x1780]|=1;
-                                IOLog("UKE: default surface region=%p bytes=%llu\n",
+                                IOLog("BRAVEARK: default surface region=%p bytes=%llu\n",
                                     region,(unsigned long long)region->getLength());
                             } else {
-                                IOLog("UKE: default surface region allocation failed; slot299 disabled\n");
+                                IOLog("BRAVEARK: default surface region allocation failed; slot299 disabled\n");
                             }
                         }
                         native_legacy_stage=5;started=display->start(nub);native_legacy_start_result=started;
