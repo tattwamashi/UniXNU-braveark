@@ -1,0 +1,37 @@
+diff --git a/iokit/Kernel/IOPlatformExpert.cpp b/iokit/Kernel/IOPlatformExpert.cpp
+--- a/iokit/Kernel/IOPlatformExpert.cpp
++++ b/iokit/Kernel/IOPlatformExpert.cpp
+@@ -992,6 +992,33 @@
+ 	uint32_t          timeout = kShutdownTimeout;
+ 	static boolean_t  panic_begin_called = FALSE;
+ 
++	/*
++	 * braveark-hold-reboot=1: bring-up aid. Every software restart ends here,
++	 * including host_reboot() and the restart after a panic, which would reset
++	 * into the stock OS and lose the screen. Turn a restart or halt into a panic
++	 * (the backtrace names the caller) and park the CPU after a panic instead of
++	 * restarting, so the panic text stays visible.
++	 */
++	{
++		static unsigned int hold = 2;
++		if (hold == 2) {
++			unsigned int value = 0;
++			hold = PE_parse_boot_argn("braveark-hold-reboot", &value, sizeof(value)) && value == 1;
++		}
++		if (hold && (type == kPEHaltCPU || type == kPERestartCPU || type == kPEUPSDelayHaltCPU) &&
++		    !panic_begin_called) {
++			panic("BRAVEARK: restart held: PEHaltRestart type %u details 0x%x", type, details);
++		}
++		if (hold && (type == kPEPanicRestartCPU || type == kPEPanicRestartCPUNoCallouts ||
++		    ((type == kPEHaltCPU || type == kPERestartCPU) && panic_begin_called))) {
++			kprintf("BRAVEARK: post-panic restart held (type %u)\n", type);
++			(void) ml_set_interrupts_enabled(FALSE);
++			for (;;) {
++				__asm__ volatile ("wfe");
++			}
++		}
++	}
++
+ 	if (type == kPEHaltCPU || type == kPERestartCPU || type == kPEUPSDelayHaltCPU) {
+ 		/* If we're in the panic path, the locks and memory allocations required below
+ 		 *  could fail. So just try to reboot instead of risking a nested panic.
