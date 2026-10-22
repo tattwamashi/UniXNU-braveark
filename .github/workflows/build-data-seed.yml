@@ -1,0 +1,76 @@
+name: build-uke-data-seed
+
+# Build the APFS Data seed from the original iPad7,1 OS volume and grow its
+# container to the end of the uke userdata partition. The owner Data mount uses
+# it as the initial /private/var; sheng-data-persist=2 keeps later changes in
+# the userdata store window. This needs macOS hdiutil/diskutil, so it is a
+# separate workflow from the kernel build.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  data-seed:
+    runs-on: macos-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out the device repository
+        uses: actions/checkout@v4
+        with:
+          path: UniXNU-uke
+
+      - name: Check out UniXNU
+        uses: actions/checkout@v4
+        with:
+          repository: Allenwdk/UniXNU
+          ref: uke
+          path: UniXNU
+          submodules: recursive
+
+      - name: Fetch the OS member
+        working-directory: UniXNU
+        run: ./unixnu ipsw fetch OS -D ../UniXNU-uke
+
+      - name: Build the Data seed
+        working-directory: UniXNU
+        run: |
+          mount=.cache/firmware/target-volumes/os-mount
+          mkdir -p "$mount"
+          dmg=$(find out/ipsw -name '044-76040-038.dmg' -print -quit)
+          test -n "$dmg"
+          echo "OS image: $dmg"
+          hdiutil attach -readonly -nobrowse -mountpoint "$mount" "$dmg"
+          trap 'hdiutil detach "$mount" || true' EXIT
+          python3 scripts/prepare-owner-data-fixture.py
+          ls -l build/owner-data-fixture/
+          cat build/owner-data-fixture/seed.json
+
+      - name: Grow the Data seed to the userdata window
+        working-directory: UniXNU
+        run: |
+          python3 -c "from pathlib import Path; import sys; sys.path.insert(0, 'drivers/DarwinBoot/Test'); import packed_ramdisk; packed_ramdisk.pack(Path('build/owner-data-fixture/owner-data-32.cdr'), Path('build/owner-data-fixture/owner-data-32.dbr'))"
+          # userdata is 241,617,055,744 B; the root image is 9,382,658,048 B.
+          # --gib 214 leaves the root image, the 1 GiB log reserve, a 4 MiB
+          # guard and one more GiB of margin inside the partition.
+          python3 scripts/seed-data-grow.py --gib 214 \
+            build/owner-data-fixture/owner-data-32.dbr \
+            build/owner-data-fixture/owner-data-214.dbr \
+            | tee build/owner-data-fixture/grown.json
+          ls -l build/owner-data-fixture/
+
+      - name: Upload the Data seed
+        uses: actions/upload-artifact@v4
+        with:
+          name: uke-data-seed
+          path: |
+            UniXNU/build/owner-data-fixture/owner-data-32.cdr
+            UniXNU/build/owner-data-fixture/owner-data-32.dbr
+            UniXNU/build/owner-data-fixture/owner-data-214.dbr
+            UniXNU/build/owner-data-fixture/seed.json
+            UniXNU/build/owner-data-fixture/grown.json
+          if-no-files-found: error
+          retention-days: 14
