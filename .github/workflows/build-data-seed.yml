@@ -62,15 +62,22 @@ jobs:
             | tee build/owner-data-fixture/grown.json
           ls -l build/owner-data-fixture/
 
+      - name: Encrypt the Data seed
+        env:
+          ARTIFACT_KEY: ${{ secrets.ARTIFACT_KEY }}
+        working-directory: UniXNU/build/owner-data-fixture
+        run: |
+          # The seed holds the initial /private/var of the iPadOS image: only an
+          # encrypted copy leaves the runner.
+          test -n "$ARTIFACT_KEY" || { echo 'ARTIFACT_KEY secret is not set' >&2; exit 1; }
+          tar -cf data-seed.tar owner-data-32.cdr owner-data-32.dbr owner-data-214.dbr seed.json grown.json
+          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt -pass env:ARTIFACT_KEY -in data-seed.tar -out data-seed.tar.enc
+          rm -f data-seed.tar
+          ls -l data-seed.tar.enc
       - name: Upload the Data seed
         uses: actions/upload-artifact@v4
         with:
           name: braveark-data-seed
-          path: |
-            UniXNU/build/owner-data-fixture/owner-data-32.cdr
-            UniXNU/build/owner-data-fixture/owner-data-32.dbr
-            UniXNU/build/owner-data-fixture/owner-data-214.dbr
-            UniXNU/build/owner-data-fixture/seed.json
-            UniXNU/build/owner-data-fixture/grown.json
+          path: UniXNU/build/owner-data-fixture/data-seed.tar.enc
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 3
