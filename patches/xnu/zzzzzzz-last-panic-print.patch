@@ -3,7 +3,7 @@ index 75a0567..bd2c6d4 100644
 --- a/osfmk/console/video_console.c
 +++ b/osfmk/console/video_console.c
 @@ -3078,6 +3078,8 @@ vcattach(void)
- 	    PE_parse_boot_argn("-uketextconsole", &text_console, sizeof(text_console)) &&
+ 	    PE_parse_boot_argn("-bravearktextconsole", &text_console, sizeof(text_console)) &&
  	    text_console) {
  		initialize_screen(NULL, kPETextScreen);
 +		extern void pe_print_last_panic(void);
