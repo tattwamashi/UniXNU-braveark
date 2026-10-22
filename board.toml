@@ -142,6 +142,9 @@ title = "braveark first boot: source 4K XNU to console"
 dram_size = "0x80000000"             # SMEM RAM table observed on the device
 skip_setup_tool = "scripts/seed-data-skip-setup.py"   # used by --skip-setup
 panic_screen = true                  # native XNU panic output; Font.h is vendored in scripts/
+# The bundle of the two unchanged original trust-cache modules (static + SystemOS cryptex) of
+# 21H461, the same bundle sheng accepts; nothing is added to it.
+trust_cache_sha256 = ["7416ca4f8377146626bb284e2133c76bee6cb4e3ee0af5d648b186235a7323a7"]
 kernel_args = [
   "-v",
   "serial=3",
