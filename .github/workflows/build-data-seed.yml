@@ -1,7 +1,7 @@
 name: build-braveark-data-seed
 
 # Build the APFS Data seed from the original iPad7,1 OS volume and grow its
-# container to the end of the uke userdata partition. The owner Data mount uses
+# container to the end of the Brave Ark userdata partition. The owner Data mount uses
 # it as the initial /private/var; sheng-data-persist=2 keeps later changes in
 # the userdata store window. This needs macOS hdiutil/diskutil, so it is a
 # separate workflow from the kernel build.
@@ -53,9 +53,9 @@ jobs:
         working-directory: UniXNU
         run: |
           python3 -c "from pathlib import Path; import sys; sys.path.insert(0, 'drivers/DarwinBoot/Test'); import packed_ramdisk; packed_ramdisk.pack(Path('build/owner-data-fixture/owner-data-32.cdr'), Path('build/owner-data-fixture/owner-data-32.dbr'))"
-          # userdata is 241,617,055,744 B; the root image is 9,382,658,048 B.
-          # --gib 214 leaves the root image, the 1 GiB log reserve, a 4 MiB
-          # guard and one more GiB of margin inside the partition.
+          # Brave Ark userdata is 241,577,046,016 B; the root image is 9,382,658,048 B.
+          # --gib 214 leaves the root image, the 1 GiB log reserve and a 4 MiB
+          # guard inside the partition, with 1.27 GB to spare.
           python3 scripts/seed-data-grow.py --gib 214 \
             build/owner-data-fixture/owner-data-32.dbr \
             build/owner-data-fixture/owner-data-214.dbr \
