@@ -9,7 +9,7 @@ out = ROOT / 'build/adreno-pm4-probe'
 out.mkdir(parents=True, exist_ok=True)
 record = json.loads((ROOT / 'build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/bsd/DEVELOPMENT/bsd_init.o.json').read_text().strip().rstrip(','))
 objects = []
-for source in (ROOT / 'kits/AdrenoPM4/AdrenoPM4.c', ROOT / 'kits/uke/AdrenoPM4Probe.c'):
+for source in (ROOT / 'kits/AdrenoPM4/AdrenoPM4.c', ROOT / 'kits/braveark/AdrenoPM4Probe.c'):
     obj = out / (source.stem + '.o')
     command = []
     i = 0

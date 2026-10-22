@@ -22,7 +22,7 @@ def text_code(path):
     return b[s['fileoff']:s['fileoff']+s['size']]
 if text_code(obj)!=text_code(late):raise SystemExit('Only owned initializer registration may change during staging')
 record=json.loads((ROOT/'build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/iokit/DEVELOPMENT/IOPlatformExpert.cpo.json').read_text().strip().rstrip(','))
-source=ROOT/'kits/uke/OfflineGPUBrokerProbe.cpp';command=[];args=record['arguments'];i=0
+source=ROOT/'kits/braveark/OfflineGPUBrokerProbe.cpp';command=[];args=record['arguments'];i=0
 while i<len(args):
     value=args[i]
     if value==record['file']:command.append(str(source))
@@ -41,8 +41,8 @@ if options.accelerator_abi:
 else:run(['xcrun','ar','rcs',archive,late,OUT/'OfflineGPUBrokerProbe.o'])
 sysroot=ROOT/'drivers/NativeMetal';sources=[source,*(sysroot/n for n in ('NativeOfflineGPU.cpp','OfflineMetalWire.h','OfflineMetalQueueWire.h','OfflineMetalTextureWire.h','OfflineMetalDepthStencilWire.h','OfflineMetalFenceWire.h','OfflineMetalCommandWire.h','OfflineMetalEventWire.h','OfflineMetalSharedEventWire.h','OfflineMetalSessionWire.h')),
     ROOT/'drivers/NativeVirtioConsole/NativeVirtioConsole.cpp',ROOT/'drivers/NativeVirtioConsole/NativeVirtioConsoleTransport.h']
-if options.accelerator_abi:sources.extend([ROOT/'drivers/NativeMetal/NativeOfflineAccelerator.cpp',ROOT/'drivers/NativeMetal/OriginalAcceleratorABI.h',ROOT/'kits/uke/AcceleratorABIProbe.cpp',ROOT/'kits/uke/OriginalGPUClientABIProbe.cpp'])
-if options.provider_probe:sources.extend([ROOT/'kits/uke/OriginalGPUProviderProbe.cpp',ROOT/'drivers/NativeMetal/OriginalGPUProviderABI.h',ROOT/'drivers/NativeMetal/NativeIOGPUProviderProbe.cpp'])
+if options.accelerator_abi:sources.extend([ROOT/'drivers/NativeMetal/NativeOfflineAccelerator.cpp',ROOT/'drivers/NativeMetal/OriginalAcceleratorABI.h',ROOT/'kits/braveark/AcceleratorABIProbe.cpp',ROOT/'kits/braveark/OriginalGPUClientABIProbe.cpp'])
+if options.provider_probe:sources.extend([ROOT/'kits/braveark/OriginalGPUProviderProbe.cpp',ROOT/'drivers/NativeMetal/OriginalGPUProviderABI.h',ROOT/'drivers/NativeMetal/NativeIOGPUProviderProbe.cpp'])
 (OUT/'build-report.json').write_text(json.dumps(dict(source_sha256={str(p.relative_to(ROOT)):sha(p) for p in sources},
     archive_sha256=sha(archive),console_archive_sha256=sha(ROOT/'build/native-virtio-console/libNativeVirtioConsole.a'),
     compiled_object_sha256=sha(obj),late_object_sha256=sha(late),accelerator_abi_probe=options.accelerator_abi,provider_probe=options.provider_probe,normal_system_device_discovery=False,runtime_qualified=False),indent=2)+'\n')

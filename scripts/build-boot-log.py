@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'build/uke-last-log'
 OUT.mkdir(parents=True, exist_ok=True)
 record = json.loads((ROOT / 'build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/osfmk/DEVELOPMENT/startup.o.json').read_text().strip().rstrip(','))
-source = ROOT / 'kits/uke/UkeLastLog.c'
+source = ROOT / 'kits/braveark/UkeLastLog.c'
 obj = OUT / 'UkeLastLog.o'
 command = []
 args = record['arguments']
@@ -32,7 +32,7 @@ subprocess.run(command, cwd=record['directory'], check=True, timeout=120)
 (OUT / 'compile-command.json').write_text(json.dumps(command, indent=2) + '\n')
 
 policy_record = json.loads((ROOT / 'build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/bsd/DEVELOPMENT/kern_exec.o.json').read_text().strip().rstrip(','))
-policy_source = ROOT / 'kits/uke/BootWatchdogPolicy.c'
+policy_source = ROOT / 'kits/braveark/BootWatchdogPolicy.c'
 policy_obj = OUT / 'BootWatchdogPolicy.o'
 policy_command = []
 policy_args = policy_record['arguments']

@@ -3,7 +3,7 @@
 import hashlib,json,subprocess
 from pathlib import Path
 root=Path(__file__).resolve().parents[1];out=root/'build/cpu-desktop/watchdog-policy';out.mkdir(parents=True,exist_ok=True)
-s=(root/'kits/uke/BootWatchdogPolicy.c').read_text();body=s[s.index('static const char policy'):]
+s=(root/'kits/braveark/BootWatchdogPolicy.c').read_text();body=s[s.index('static const char policy'):]
 prefix=r'''
 #include <assert.h>
 #include <stdint.h>

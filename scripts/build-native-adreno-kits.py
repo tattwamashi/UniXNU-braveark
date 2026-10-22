@@ -7,7 +7,7 @@ c_recipe = json.loads((ROOT / 'build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/bsd/D
 cxx_recipe = json.loads((ROOT / 'build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/iokit/DEVELOPMENT/IOPlatformExpert.cpo.json').read_text().strip().rstrip(','))
 out = ROOT / 'build/native-adreno'
 out.mkdir(parents=True, exist_ok=True)
-sources = [ROOT / 'kits/uke' / name for name in
+sources = [ROOT / 'kits/braveark' / name for name in
            ('ShengGmu.c', 'ShengGmuVotes.c', 'ShengGmuCommandDb.c')]
 sources += [ROOT / 'kits/AdrenoFirmware' / name for name in
             ('AdrenoHfi.c', 'AdrenoHfiStartup.c', 'AdrenoHfiVotes.c', 'AdrenoFirmware.c')]
@@ -37,7 +37,7 @@ for source in sources:
         elif not value.startswith('-W') and value not in ('-MD', '-MP'):
             command.append(value)
         i += 1
-    command += ['-I', str(ROOT / 'kits/uke'), '-I', str(ROOT / 'kits/AdrenoFirmware'),
+    command += ['-I', str(ROOT / 'kits/braveark'), '-I', str(ROOT / 'kits/AdrenoFirmware'),
                 '-I', str(ROOT / 'build/sheng-gmu'), '-I', str(ROOT / 'kits/AdrenoPM4'), '-I', str(ROOT / 'kits/ArmSmmu4K'), '-I', str(ROOT / '.cache/xnu-work/osfmk'),
                 '-I', str(ROOT / 'drivers/NativeAdreno'), '-Wall', '-Wextra', '-Werror',
                 '-Wno-unused-parameter', '-Wno-incompatible-sysroot', '-Wno-c99-designator',

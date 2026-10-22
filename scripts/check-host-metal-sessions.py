@@ -20,7 +20,7 @@ base=ROOT/'.cache/firmware/target-volumes/os-mount/System/Library'
 paths=[base/'Frameworks/QuartzCore.framework/default.metallib',base/'PrivateFrameworks/RenderBox.framework/default.metallib']
 require([sha(p) for p in paths]==['606f913adf520420f9b4bb666efb782a68c830f082f1e559e17b20d0d13adbc9','d76883f626b1527c36fb0940cf27dcade503a55cf2fa05c8f7a247a40ccebec4'],'Exact original libraries')
 exe=ROOT/'build/host-metal/host-metal-originals';build=json.loads((exe.parent/'qualification.json').read_text())
-require(sha(exe)==build['process_sha256'] and sha(ROOT/'kits/uke/HostMetalDiagnostic.mm')==build['source_sha256'],'Exact compiled real GPU host')
+require(sha(exe)==build['process_sha256'] and sha(ROOT/'kits/braveark/HostMetalDiagnostic.mm')==build['source_sha256'],'Exact compiled real GPU host')
 for name,digest in build['backend_sources'].items():require(sha(ROOT/name)==digest,'Exact compiled backend '+name)
 def words(*v):return struct.pack('<'+'Q'*len(v),*v)
 requests={};observed=[]
@@ -265,7 +265,7 @@ if a.depth_stencil:
         [r['depth_clear'] for r in d['attachment_passes']]==[1,1,0,1] and [r['front'] for r in d['stencil_references']]==[2,1,1,1] and
         len(d['enqueued_commands'])==4 and not d['pending_enqueues'], 'Actual private attachments, GPU states and reference/depth-clear controls')
     print('PASS: unchanged original shader obeys genuine stencil mismatch/match and depth rejection/pass; seven new real resource/state/isolation refusals')
-sources=[ROOT/'kits/uke/HostMetalDiagnostic.mm',*(ROOT/'drivers/NativeMetal'/n for n in ('HostMetalCommandServer.mm','HostMetalCommandServer.h','OfflineMetalWire.h','OfflineMetalFunctionWire.h','OfflineMetalQueueWire.h','OfflineMetalTextureWire.h','OfflineMetalDepthStencilWire.h','OfflineMetalSessionWire.h'))]
+sources=[ROOT/'kits/braveark/HostMetalDiagnostic.mm',*(ROOT/'drivers/NativeMetal'/n for n in ('HostMetalCommandServer.mm','HostMetalCommandServer.h','OfflineMetalWire.h','OfflineMetalFunctionWire.h','OfflineMetalQueueWire.h','OfflineMetalTextureWire.h','OfflineMetalDepthStencilWire.h','OfflineMetalSessionWire.h'))]
 (OUT/('function-constant-checkpoint.json' if a.function_constants else 'depth-stencil-checkpoint.json' if a.depth_stencil else 'private-texture-checkpoint.json' if a.private_texture else 'rgba-checkpoint.json' if a.rgba else 'enqueue-checkpoint.json' if a.enqueue else 'queue-priority-checkpoint.json' if a.queue_priority else 'checkpoint.json')).write_text(json.dumps(dict(source_sha256={str(p.relative_to(ROOT)):sha(p) for p in sources},
     process_sha256=sha(exe),report_sha256=sha(OUT/'host-report.json'),operations=len(observed),isolated_sessions=2,
     real_gpu_completions=6 if a.function_constants else 7 if a.depth_stencil else 4 if (a.enqueue or a.private_texture) else 3,refusals=16 if a.function_constants else 14 if a.depth_stencil else 13 if (a.queue_priority or a.enqueue or a.private_texture) else 7,actual_function_constants=a.function_constants,actual_queue_priority=a.queue_priority,actual_enqueue=a.enqueue,rgba8_channel_order=a.rgba,private_rg16float_gpu_copy=a.private_texture,actual_gpu_depth_stencil=a.depth_stencil,combined_depth_stencil=a.combined_depth_stencil,guest_kernel_broker=False,native_process_isolation=False,

@@ -167,7 +167,7 @@ def code(data,info):
     sec=next(s for g in info['segments'] for s in g['sections'] if s['name']=='__text');return data[sec['fileoff']:sec['fileoff']+sec['size']]
 require(code(raw,image)==code(late.read_bytes(),macho(late.read_bytes())),'Only owned initializer section registration changes')
 r=json.loads((ROOT/'build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/iokit/DEVELOPMENT/IOPlatformExpert.cpo.json').read_text().strip().rstrip(','))
-cmd=[];args=r['arguments'];i=0;source=ROOT/'kits/uke/LegacyDisplayProbe.cpp'
+cmd=[];args=r['arguments'];i=0;source=ROOT/'kits/braveark/LegacyDisplayProbe.cpp'
 while i<len(args):
     value=args[i]
     if value==r['file']:cmd.append(str(source))
@@ -177,18 +177,18 @@ while i<len(args):
     i+=1
 cmd+=['-Wall','-Wextra','-Werror','-Wno-unused-parameter','-Wno-unnecessary-virtual-specifier','-Wno-c99-designator','-Wno-reorder-init-list',
       '-Wno-deprecated-enum-enum-conversion','-I',str(ROOT/'.cache/xnu-work/osfmk')]
-(ROOT/'kits/uke-ci').mkdir(parents=True,exist_ok=True)
-cmd+=['-I',str(ROOT/'kits/uke-ci')]
+(ROOT/'kits/braveark-ci').mkdir(parents=True,exist_ok=True)
+cmd+=['-I',str(ROOT/'kits/braveark-ci')]
 run(cmd,cwd=r['directory'])
-hid_source=ROOT/'kits/uke/HidInputProbe.cpp'
+hid_source=ROOT/'kits/braveark/HidInputProbe.cpp'
 hid_obj=OUT/'HidInputProbe.o'
 hid_cmd=[str(hid_source) if str(arg)==str(source) else str(hid_obj) if str(arg)==str(OUT/'LegacyDisplayProbe.o') else arg for arg in cmd]
 run(hid_cmd,cwd=r['directory'])
-keystore_source=ROOT/'kits/uke/KeyStoreProbe.cpp'
+keystore_source=ROOT/'kits/braveark/KeyStoreProbe.cpp'
 keystore_obj=OUT/'KeyStoreProbe.o'
 keystore_cmd=[str(keystore_source) if str(arg)==str(source) else str(keystore_obj) if str(arg)==str(OUT/'LegacyDisplayProbe.o') else arg for arg in cmd]
 run(keystore_cmd,cwd=r['directory'])
-process_source=ROOT/'kits/uke/BootProcessProbe.c'
+process_source=ROOT/'kits/braveark/BootProcessProbe.c'
 process_obj=OUT/'BootProcessProbe.o'
 pr=json.loads((ROOT/'build/xnu/ios-obj/DEVELOPMENT_ARM64_BCM2837/osfmk/DEVELOPMENT/startup.o.json').read_text().strip().rstrip(','))
 process_cmd=[];pa=pr['arguments'];j=0
@@ -203,18 +203,18 @@ while j<len(pa):
     j+=1
 process_cmd+=['-Wall','-Wextra','-Werror','-mgeneral-regs-only','-I',str(ROOT/'.cache/xnu-work/osfmk')]
 run(process_cmd,cwd=pr['directory'])
-trace_source=ROOT/'kits/uke/BootUiTraceProbe.c'
+trace_source=ROOT/'kits/braveark/BootUiTraceProbe.c'
 trace_obj=OUT/'BootUiTraceProbe.o'
 trace_cmd=[str(trace_source) if arg==str(process_source) else str(trace_obj) if arg==str(process_obj) else arg for arg in process_cmd]
 run(trace_cmd,cwd=pr['directory'])
-stub_source=ROOT/'kits/uke/LegacyDisplayStubs.c'
+stub_source=ROOT/'kits/braveark/LegacyDisplayStubs.c'
 stub_obj=OUT/'LegacyDisplayStubs.o'
 run([str(stub_source) if arg==str(process_source) else str(stub_obj) if arg==str(process_obj) else arg for arg in process_cmd],cwd=pr['directory'])
 # Default-off touch bring-up: C++ board probe plus the generic GENI SPI and Novatek protocol/touch libraries, compiled with the
 # kernel C flags, and the firmware object generated from the copy kept outside Git.
 touch_dir=OUT/'touch';touch_dir.mkdir(exist_ok=True)
-touch_cpp=ROOT/'kits/uke/TouchProbe.cpp';touch_cpp_obj=touch_dir/'TouchProbe.o'
-cpufreq_cpp=ROOT/'kits/uke/CpuFreqProbe.cpp';cpufreq_obj=touch_dir/'CpuFreqProbe.o'
+touch_cpp=ROOT/'kits/braveark/TouchProbe.cpp';touch_cpp_obj=touch_dir/'TouchProbe.o'
+cpufreq_cpp=ROOT/'kits/braveark/CpuFreqProbe.cpp';cpufreq_obj=touch_dir/'CpuFreqProbe.o'
 # uke first-console: NATIVE_ADRENO is off, so GpuPowerProbe's Adreno and
 # GPU-addon imports would be undefined. It is a default-off probe; omit it
 # from this archive until the Adreno kit is linked.
@@ -241,9 +241,9 @@ require(code((keyevents/'NativeKeyStoreEvents.o').read_bytes(),macho((keyevents/
 run(['xcrun','ar','rcs',archive,late,OUT/'original-bindings.o',OUT/'LegacyDisplayProbe.o',hid_obj,keystore_obj,process_obj,trace_obj,
      hid_dir/'NativeHidInput.late.o',hid_dir/'hid-original-bindings.o',keyevents_late,touch_cpp_obj,cpufreq_obj,stub_obj,*touch_objs])
 sources=[ROOT/'drivers/NativeMobileDisplay/NativeLegacyDisplay.cpp',
-         ROOT/'drivers/NativeMobileDisplay/NativeLegacyRequest.h',source,hid_source,keystore_source,process_source,trace_source,ROOT/'kits/uke/BootUiTraceCore.h',ROOT/'kits/uke/BootUiTraceDetails.h',
+         ROOT/'drivers/NativeMobileDisplay/NativeLegacyRequest.h',source,hid_source,keystore_source,process_source,trace_source,ROOT/'kits/braveark/BootUiTraceCore.h',ROOT/'kits/braveark/BootUiTraceDetails.h',
          ROOT/'drivers/NativeHidInput/NativeHidInput.cpp',ROOT/'scripts/build-native-hid-input.py',
-         ROOT/'drivers/NativeKeyStoreEvents/NativeKeyStoreEvents.cpp',touch_cpp,cpufreq_cpp,ROOT/'kits/uke/TouchBoard.h',stub_source,
+         ROOT/'drivers/NativeKeyStoreEvents/NativeKeyStoreEvents.cpp',touch_cpp,cpufreq_cpp,ROOT/'kits/braveark/TouchBoard.h',stub_source,
          ROOT/'drivers/NativeGeniSpi/GeniSpi.c',ROOT/'drivers/NativeGeniSpi/GeniSpi.h',ROOT/'drivers/NativeNovatekTouch/NvtProtocol.c',
          ROOT/'drivers/NativeNovatekTouch/NvtProtocol.h',ROOT/'drivers/NativeNovatekTouch/NvtTouchCore.c',ROOT/'drivers/NativeNovatekTouch/NvtTouchCore.h']
 print(run(['python3',ROOT/'scripts/build-arm-driver.py','NativeGOPPresenter'],text=True),end='')

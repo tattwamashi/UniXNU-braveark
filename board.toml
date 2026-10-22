@@ -5,8 +5,7 @@
 name = "braveark"
 soc = "SM8635"
 description = "Brave Ark"
-kit = "uke"                      # the package/ of this repository appears as kits/uke in the build tree;
-                                 # the uke-derived scripts (75 files) and includes expect that path
+kit = "braveark"                 # the package/ of this repository appears as kits/braveark in the build tree
 
 # The target OS image: the unchanged iPad7,1 iPadOS 17.7.11 restore image. Give --ipsw PATH to use a local file; without
 # it the remote url is read with range requests, only the members that are needed.
