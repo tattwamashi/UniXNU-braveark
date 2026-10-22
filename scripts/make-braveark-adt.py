@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Generate the minimal uke hardware Apple-format DT for the first boot.
+"""Generate the minimal BraveArk hardware Apple-format DT for the first boot.
 
 The tree mirrors the proven QEMU entry fixture structure (same required
 nodes and properties the source XNU boot converged on) with real pinned
-uke SM7675 values taken from the compiled board DT:
+BraveArk SM8635 (cliffsp, QRD board) values, checked against the stock dtb_idx 4 + dtbo_idx 24 DT;
+they are the same as uke SM7675's (both Palawan):
 
   - GICv3 distributor 0x17100000/0x10000, redistributor 0x17180000/0x200000
     (arm-io child offsets under an APSS range at 0x17000000), stride 0x40000
@@ -78,7 +79,7 @@ def empty_nvram_proxy():
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--output', type=Path,
-                        default=ROOT / 'build/uke/boot/kernel.macho.adt')
+                        default=ROOT / 'build/braveark/boot/kernel.macho.adt')
     parser.add_argument('--dram-size', type=lambda value: int(value, 0), required=True,
                         help='Actual observed DRAM size, e.g. 0x230000000')
     parser.add_argument('--owned-memory-size', type=lambda value: int(value, 0), default=None,
@@ -90,10 +91,10 @@ def main():
     parser.add_argument('--chip-id', type=lambda value: int(value, 16), default=None)
     parser.add_argument('--ipad-identity', action='store_true',
                         help='/product and /buttons describe an iPad-class device without a Home button (MobileGestalt reads these from the tree); '
-                             'values follow the unchanged iPad7,1 tree, the panel geometry and button set are uke\'s')
+                             'values follow the unchanged iPad7,1 tree, the panel geometry and button set are BraveArk\'s')
     parser.add_argument('--cpu-regs', default='0',
                         help='Comma-separated CPU MPIDR affinity values (the /cpus reg of each core); the first is the running boot CPU. '
-                             'SM7675 numbers its cores 0x000..0x700 in Affinity1 (sm8550.dtsi). More than one adds /psci')
+                             'SM8635 numbers its cores 0x000..0x700 in Affinity1 (sm8550.dtsi). More than one adds /psci')
     parser.add_argument('--psci-method', choices=['smc', 'hvc'], default='smc',
                         help='/psci method used by the secondary-CPU start (the board DT declares smc)')
     parser.add_argument('--packed-data-ramdisk', action='store_true', help='Hand off validated DBRDISK1 bytes to the native sparse block driver, without a dense memdev alias')
@@ -135,10 +136,10 @@ def main():
     tree = node('device-tree', [
         # hw.product/hw.machine/hw.target come from the root 'model'/'target-type' (IODTPlatformExpert);
         # libMobileGestalt prefix-matches hw.product against iPhone/iPod/iPad, so the iPad identity needs both here.
-        ('model', b'iPad7,1\0' if args.ipad_identity else b'uke-first-boot\0'),
+        ('model', b'iPad7,1\0' if args.ipad_identity else b'braveark-first-boot\0'),
         *([('target-type', b'J120\0')] if args.ipad_identity else []),
-        # Root compatible strings of the compiled board DT (xiaomi,uke / qcom,sm7675).
-        ('compatible', b'xiaomi,uke\0qcom,sm7675\0'),
+        # Root compatible: the board DT's own is qcom,cliffsp; brave,braveark names the device.
+        ('compatible', b'brave,braveark\0qcom,cliffsp\0'),
         ('#address-cells', struct.pack('<I', 2)),
         ('#size-cells', struct.pack('<I', 2)),
     ], [
@@ -166,7 +167,7 @@ def main():
                         # Image4 hash algorithm. The target iPad's DT specifies sha2-384 in /chosen; this
                         # selects the algorithm only and asserts nothing about Apple silicon or fuses.
                         ('crypto-hash-method', b'sha2-384\0'),
-                        # mount(8) phase 1 exits with EX_NOINPUT when /chosen has no hash. The uke
+                        # mount(8) phase 1 exits with EX_NOINPUT when /chosen has no hash. The BraveArk
                         # bring-up chain has no Apple personalization manifest, so board.toml
                         # supplies an explicit owner boot-set identity.
                         *([('boot-manifest-hash', boot_manifest_hash)] if boot_manifest_hash else []),
@@ -195,11 +196,11 @@ def main():
         # The original AppleImage4 panics without a product node. Name and model are the
         # board DT's own strings.
         *( [node('buttons', [('compatible', b'buttons\0'), ('device_type', b'buttons\0'),
-                             # No 'menu' entry: uke has no Home button. 2 = the non-mechanical answer BSPlatform passes through.
+                             # No 'menu' entry: BraveArk has no Home button. 2 = the non-mechanical answer BSPlatform passes through.
                              ('button-names', b'hold\0voldown\0volup\0'),
                              ('home-button-type', struct.pack('<I', 2))])] if args.ipad_identity else [] ),
-        node('product', [('product-name', b'iPad Pro (12.9-inch) (2nd generation)\0' if args.ipad_identity else b'Xiaomi Pad 7\0'),
-                         ('model', b'xiaomi,uke\0'),
+        node('product', [('product-name', b'iPad Pro (12.9-inch) (2nd generation)\0' if args.ipad_identity else b'Brave Ark\0'),
+                         ('model', b'brave,braveark\0'),
                          *( [('product-description', b'iPad Pro (12.9-inch) (2nd generation)\0'),
                              ('artwork-device-idiom', b'pad\0'),
                              ('artwork-device-subtype', struct.pack('<I', 2732)),
@@ -223,7 +224,7 @@ def main():
     ])
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_bytes(tree)
-    print(f'uke ADT: {len(tree)} bytes, dram {args.dram_size:#x}, timebase {TIMEBASE}')
+    print(f'braveark ADT: {len(tree)} bytes, dram {args.dram_size:#x}, timebase {TIMEBASE}')
 
 
 if __name__ == '__main__':
