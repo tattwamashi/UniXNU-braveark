@@ -130,6 +130,7 @@ DEVICE_MODEL = "braveark"
 MEMORY_PROTECTION = "TRUE"
 SHIP_MODE = "FALSE"
 BUILDID_STRING = "braveark-research"
+BRAVEARK_UEFI_UFS = "0"          # no Qualcomm UFSDxe: it maps the UFS SMMU stream that NativeUfs takes over
 
 # The ramdisk of the boot image: a FAT volume with the UniXNU config, the kernel, its device tree and
 # the optional trust cache and Data seed. The loader (DarwinBoot) is part of the firmware volume.
