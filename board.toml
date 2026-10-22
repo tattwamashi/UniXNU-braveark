@@ -24,10 +24,11 @@ fetch = ["KernelCache", "DeviceTree", "StaticTrustCache", "Cryptex1,SystemTrustC
 "044-76034-038.dmg" = "b4908cde41d23e6bc05e6af51a2c9eeb00cf0f863a6a18b1600c96a3fd70414f"
 
 # The raw image for the userdata partition: the OS and SystemOS disk images of the IPSW behind a manifest.
-# first_lba and last_lba are the GPT entry "userdata" of LUN 0, read from the tablet.
+# The GPT entry "userdata" (sda12) of LUN 0: first_lba from the BSP GPT (Document_tools/default_bin/gpt_main0.bin),
+# last_lba = first_lba + (fastboot getvar partition-size:userdata = 0x383F1D3000) / 4096 - 1 (224.98 GiB).
 [userdata]
-first_lba = 0x2d3000
-last_lba = 0x3b147fa
+first_lba = 0x24c628
+last_lba = 0x3a8b7fa
 lba_bytes = 4096
 windows = [
   { name = "OS", component = "OS" },
